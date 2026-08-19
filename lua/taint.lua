@@ -156,7 +156,6 @@ M.main = function()
     assert(parser:parse())
 
     local node = assert(vim.treesitter.get_node())
-    local node_text = vim.treesitter.get_node_text(node, 0)
     local node_row, node_col = node:range()
     local root = node:tree():root()
     local captures = build_captures(root, parser)
@@ -173,6 +172,7 @@ M.main = function()
     local scope, definition = defining_scope(node, definitions_in_scope_id)
     -- If no scope, it's maybe imported or similar, so just abort.
     if scope == nil then return end
+    assert(definition)
 
     ---@type TSNode[]
     local assignees = {}
@@ -182,9 +182,12 @@ M.main = function()
             local expression_list = assignment:field("left")[1]
             for i = 0, expression_list:named_child_count() - 1 do
                 local child = assert(expression_list:named_child(i))
-                if vim.treesitter.get_node_text(child, 0) == node_text then
-                    table.insert(assignees, child)
-                    break
+                if child:type() == "identifier" then
+                    local _, child_definition = defining_scope(child, definitions_in_scope_id)
+                    if child_definition and child_definition:id() == definition:id() then
+                        table.insert(assignees, child)
+                        break
+                    end
                 end
             end
         end
@@ -195,7 +198,7 @@ M.main = function()
     end
 
     extmark(scope, "@taint.scope")
-    extmark(assert(definition), "@taint.definition", "Definition")
+    extmark(definition, "@taint.definition", "Definition")
     extmark(node, "@taint.symbol", "Symbol")
 end
 
