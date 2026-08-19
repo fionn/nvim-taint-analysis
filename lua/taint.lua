@@ -174,15 +174,14 @@ M.main = function()
     -- If no scope, it's maybe imported or similar, so just abort.
     if scope == nil then return end
 
-    local assignments = assignments_in_scope(scope)
-    for i, assignment in ipairs(assignments) do
+    ---@type TSNode[]
+    local assignments = {}
+    for _, assignment in ipairs(assignments_in_scope(scope)) do
         local assignment_row, assignment_col = assignment:range()
-        if assignment_row > node_row then
-            assignments[i] = nil
-        elseif assignment_row == node_row and assignment_col > node_col then
-            assignments[i] = nil
-        elseif node_text ~= vim.treesitter.get_node_text(assignment:field("left")[1], 0) then
-            assignments[i] = nil
+        if assignment_row <= node_row
+           and not (assignment_row == node_row and assignment_col > node_col)
+           and node_text == vim.treesitter.get_node_text(assignment:field("left")[1], 0) then
+            table.insert(assignments, assignment)
         end
     end
 
