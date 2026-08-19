@@ -2,7 +2,7 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("taint")
 
-vim.api.nvim_set_hl(ns, "@taint.reference", {bg = "#707000", default = true})
+vim.api.nvim_set_hl(ns, "@taint.assignment", {bg = "#707000", default = true})
 vim.api.nvim_set_hl(ns, "@taint.scope", {bg = "#102030", default = true})
 vim.api.nvim_set_hl(ns, "@taint.definition", {bg = "#905000", default = true})
 vim.api.nvim_set_hl(ns, "@taint.symbol", {bg = "#0050f0", default = true})
@@ -41,11 +41,9 @@ local function build_captures(root, parser)
     local query = assert(vim.treesitter.query.get(parser:lang(), "locals"))
 
     ---@class (exact) Captures
-    ---@field references TSNode[]
     ---@field scopes TSNode[]
     ---@field definitions TSNode[]
     local captured = {
-        references = {},
         scopes = {},
         definitions = {}
     }
@@ -62,10 +60,6 @@ local function build_captures(root, parser)
             -- This node contains the name of a definition within the local
             -- scope.
             table.insert(captured.definitions, node)
-        elseif capture == "local.reference" then
-            -- This node containst a name which may refer to an earlier
-            -- definition within an enclosing scope.
-            table.insert(captured.references, node)
         end
     end
 
@@ -193,7 +187,7 @@ M.main = function()
     end
 
     for _, assignee in ipairs(assignees) do
-        extmark(assignee, "@taint.reference", "Assignment")
+        extmark(assignee, "@taint.assignment", "Assignment")
     end
 
     extmark(scope, "@taint.scope")
