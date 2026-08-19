@@ -175,18 +175,23 @@ M.main = function()
     if scope == nil then return end
 
     ---@type TSNode[]
-    local assignments = {}
+    local assignees = {}
     for _, assignment in ipairs(assignments_in_scope(scope)) do
         local assignment_row, assignment_col = assignment:range()
-        if assignment_row <= node_row
-           and not (assignment_row == node_row and assignment_col > node_col)
-           and node_text == vim.treesitter.get_node_text(assignment:field("left")[1], 0) then
-            table.insert(assignments, assignment)
+        if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
+            local expression_list = assignment:field("left")[1]
+            for i = 0, expression_list:named_child_count() - 1 do
+                local child = assert(expression_list:named_child(i))
+                if vim.treesitter.get_node_text(child, 0) == node_text then
+                    table.insert(assignees, child)
+                    break
+                end
+            end
         end
     end
 
-    for _, assignment in ipairs(assignments) do
-        extmark(assignment:field("left")[1], "@taint.reference", "Assignment")
+    for _, assignee in ipairs(assignees) do
+        extmark(assignee, "@taint.reference", "Assignment")
     end
 
     extmark(scope, "@taint.scope")
