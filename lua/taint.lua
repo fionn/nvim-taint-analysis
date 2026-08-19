@@ -2,8 +2,6 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("taint")
 
-vim.api.nvim_set_hl_ns(ns)
-
 vim.api.nvim_set_hl(ns, "@taint.reference", {bg = "#707000", default = true})
 vim.api.nvim_set_hl(ns, "@taint.scope", {bg = "#102030", default = true})
 vim.api.nvim_set_hl(ns, "@taint.definition", {bg = "#905000", default = true})
@@ -149,6 +147,7 @@ end
 
 M.main = function()
     vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
+    vim.api.nvim_win_set_hl_ns(0, ns)
 
     local parser = assert(vim.treesitter.get_parser())
     -- We parse the whole tree first, just in case. See
