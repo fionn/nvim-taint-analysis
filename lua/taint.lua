@@ -139,8 +139,12 @@ local function assignments_in_scope(node, accumulator)
     return accumulator
 end
 
-M.main = function()
+M.clear = function()
     vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
+end
+
+M.main = function()
+    M.clear()
     vim.api.nvim_win_set_hl_ns(0, ns)
 
     local parser = assert(vim.treesitter.get_parser())
