@@ -4,6 +4,7 @@ local ns = vim.api.nvim_create_namespace("taint")
 
 vim.api.nvim_set_hl(ns, "@taint.assignment", {bg = "#707000", default = true})
 vim.api.nvim_set_hl(ns, "@taint.scope", {bg = "#102030", default = true})
+vim.api.nvim_set_hl(ns, "@taint.input", {bg = "#204090", default = true})
 vim.api.nvim_set_hl(ns, "@taint.definition", {bg = "#905000", default = true})
 vim.api.nvim_set_hl(ns, "@taint.symbol", {bg = "#0050f0", default = true})
 vim.api.nvim_set_hl(ns, "@taint.virt_text", {fg = "#306090", default = true})
@@ -30,6 +31,25 @@ local function extmark(node, type, virtual_text)
     }
 
     return vim.api.nvim_buf_set_extmark(0, ns, start_row, start_col, extmark_opts)
+end
+
+---@param node TSNode
+---@param types string[]
+---@param decendants TSNode[]?
+---@return TSNode[]
+local function decendants_of_types(node, types, decendants)
+    ---@type TSNode[]
+    decendants = decendants or {}
+
+    for child in node:iter_children() do
+        if vim.list_contains(types, child:type()) then
+            table.insert(decendants, child)
+        else
+            decendants_of_types(child, types, decendants)
+        end
+    end
+
+    return decendants
 end
 
 -- Query for references, scopes and definitions.
@@ -125,7 +145,7 @@ end
 ---@param accumulator TSNode[]?
 ---@return TSNode[] assignments
 local function assignments_in_scope(node, accumulator)
-    local assignment_types = {"assignment_statement"}
+    local assignment_types = {"assignment_statement", "short_var_declaration"}
     accumulator = accumulator or {}
 
     if vim.list_contains(assignment_types, node:type()) then
@@ -171,18 +191,25 @@ M.main = function()
     if scope == nil then return end
     assert(definition)
 
-    ---@type TSNode[]
-    local assignees = {}
+    ---@type TSNode[], TSNode[]
+    local assignees, inputs = {}, {}
     for _, assignment in ipairs(assignments_in_scope(scope)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
-            local expression_list = assignment:field("left")[1]
-            for i = 0, expression_list:named_child_count() - 1 do
-                local child = assert(expression_list:named_child(i))
-                if child:type() == "identifier" then
-                    local _, child_definition = defining_scope(child, definitions_in_scope_id)
+            local left = assignment:field("left")[1]
+            for i = 0, left:named_child_count() - 1 do
+                local left_child = assert(left:named_child(i))
+                if left_child:type() == "identifier" then
+                    local _, child_definition = defining_scope(left_child, definitions_in_scope_id)
                     if child_definition and child_definition:id() == definition:id() then
-                        table.insert(assignees, child)
+                        table.insert(assignees, left_child)
+                        for right_child in assignment:field("right")[1]:iter_children() do
+                            for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
+                                if not node:equal(identifier) then
+                                    table.insert(inputs, identifier)
+                                end
+                            end
+                        end
                         break
                     end
                 end
@@ -192,6 +219,10 @@ M.main = function()
 
     for _, assignee in ipairs(assignees) do
         extmark(assignee, "@taint.assignment", "Assignment")
+    end
+
+    for _, input in ipairs(inputs) do
+        extmark(input, "@taint.input")
     end
 
     extmark(scope, "@taint.scope")
