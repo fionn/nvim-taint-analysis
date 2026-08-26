@@ -160,13 +160,17 @@ local function assignments_in_scope(node, accumulator)
 end
 
 -- Recursively mark assignments and inputs affecting the given node.
--- Note that this has a side effect of setting extmarks and does not return
--- anything.
 ---@param node TSNode
 ---@param scope TSNode
 ---@param definition TSNode
 ---@param definitions_in_scope_id { [string]: TSNode[] }
-local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
+---@param assignees TSNode[]?
+---@param inputs TSNode[]?
+---@return TSNode[] assignees, TSNode[] inputs
+local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id, assignees, inputs)
+    assignees = assignees or {}
+    inputs = inputs or {}
+
     local node_row, node_col = node:range()
 
     for _, assignment in ipairs(assignments_in_scope(scope)) do
@@ -178,14 +182,14 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                 if left_child:type() == "identifier" then
                     local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                     if left_child_definition and left_child_definition:id() == definition:id() then
-                        extmark(left_child, "@taint.assignment", "Assignment")
+                        table.insert(assignees, left_child)
                         for right_child in assignment:field("right")[1]:iter_children() do
                             for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
                                 if not node:equal(identifier) then
-                                    extmark(identifier, "@taint.input")
+                                    table.insert(inputs, identifier)
                                     local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
                                     if child_scope ~= nil then
-                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id)
+                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, assignees, inputs)
                                     end
                                 end
                             end
@@ -196,6 +200,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
             end
         end
     end
+    return assignees, inputs
 end
 
 M.clear = function()
@@ -229,7 +234,15 @@ M.main = function()
     if scope == nil then return end
     assert(definition)
 
-    assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
+    local assignees, inputs = assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
+
+    for _, assignee in ipairs(assignees) do
+        extmark(assignee, "@taint.assignment", "Assignment")
+    end
+
+    for _, input in ipairs(inputs) do
+        extmark(input, "@taint.input")
+    end
 
     extmark(scope, "@taint.scope")
     extmark(definition, "@taint.definition", "Definition")
