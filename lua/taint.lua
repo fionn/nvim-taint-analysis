@@ -159,6 +159,45 @@ local function assignments_in_scope(node, accumulator)
     return accumulator
 end
 
+-- Recursively mark assignments and inputs affecting the given node.
+-- Note that this has a side effect of setting extmarks and does not return
+-- anything.
+---@param node TSNode
+---@param scope TSNode
+---@param definition TSNode
+---@param definitions_in_scope_id { [string]: TSNode[] }
+local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
+    local node_row, node_col = node:range()
+
+    for _, assignment in ipairs(assignments_in_scope(scope)) do
+        local assignment_row, assignment_col = assignment:range()
+        if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
+            local left = assignment:field("left")[1]
+            for i = 0, left:named_child_count() - 1 do
+                local left_child = assert(left:named_child(i))
+                if left_child:type() == "identifier" then
+                    local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
+                    if left_child_definition and left_child_definition:id() == definition:id() then
+                        extmark(left_child, "@taint.assignment", "Assignment")
+                        for right_child in assignment:field("right")[1]:iter_children() do
+                            for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
+                                if not node:equal(identifier) then
+                                    extmark(identifier, "@taint.input")
+                                    local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
+                                    if child_scope ~= nil then
+                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id)
+                                    end
+                                end
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+        end
+    end
+end
+
 M.clear = function()
     vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
 end
@@ -173,7 +212,6 @@ M.main = function()
     assert(parser:parse())
 
     local node = assert(vim.treesitter.get_node())
-    local node_row, node_col = node:range()
     local root = node:tree():root()
     local captures = build_captures(root, parser)
 
@@ -191,39 +229,7 @@ M.main = function()
     if scope == nil then return end
     assert(definition)
 
-    ---@type TSNode[], TSNode[]
-    local assignees, inputs = {}, {}
-    for _, assignment in ipairs(assignments_in_scope(scope)) do
-        local assignment_row, assignment_col = assignment:range()
-        if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
-            local left = assignment:field("left")[1]
-            for i = 0, left:named_child_count() - 1 do
-                local left_child = assert(left:named_child(i))
-                if left_child:type() == "identifier" then
-                    local _, child_definition = defining_scope(left_child, definitions_in_scope_id)
-                    if child_definition and child_definition:id() == definition:id() then
-                        table.insert(assignees, left_child)
-                        for right_child in assignment:field("right")[1]:iter_children() do
-                            for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
-                                if not node:equal(identifier) then
-                                    table.insert(inputs, identifier)
-                                end
-                            end
-                        end
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    for _, assignee in ipairs(assignees) do
-        extmark(assignee, "@taint.assignment", "Assignment")
-    end
-
-    for _, input in ipairs(inputs) do
-        extmark(input, "@taint.input")
-    end
+    assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
 
     extmark(scope, "@taint.scope")
     extmark(definition, "@taint.definition", "Definition")
