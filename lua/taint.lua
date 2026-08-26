@@ -164,12 +164,19 @@ end
 ---@param scope TSNode
 ---@param definition TSNode
 ---@param definitions_in_scope_id { [string]: TSNode[] }
+---@param visited string[]?
 ---@param assignees TSNode[]?
 ---@param inputs TSNode[]?
 ---@return TSNode[] assignees, TSNode[] inputs
-local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id, assignees, inputs)
+local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id, visited, assignees, inputs)
+    visited = visited or {}
     assignees = assignees or {}
     inputs = inputs or {}
+
+    if vim.list_contains(visited, definition:id()) then
+        return assignees, inputs
+    end
+    table.insert(visited, definition:id())
 
     local node_row, node_col = node:range()
 
@@ -189,7 +196,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                                     table.insert(inputs, identifier)
                                     local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
                                     if child_scope ~= nil then
-                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, assignees, inputs)
+                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, visited, assignees, inputs)
                                     end
                                 end
                             end
