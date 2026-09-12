@@ -142,18 +142,18 @@ end
 
 -- For a given scope node, find all assignments within it.
 ---@param node TSNode
+---@param types string[]
 ---@param accumulator TSNode[]?
 ---@return TSNode[] assignments
-local function assignments_in_scope(node, accumulator)
-    local assignment_types = {"assignment_statement", "short_var_declaration"}
+local function node_types_in_scope(node, types, accumulator)
     accumulator = accumulator or {}
 
-    if vim.list_contains(assignment_types, node:type()) then
+    if vim.list_contains(types, node:type()) then
         table.insert(accumulator, node)
     end
 
     for child in node:iter_children() do
-        assignments_in_scope(child, accumulator)
+        node_types_in_scope(child, types, accumulator)
     end
 
     return accumulator
@@ -180,7 +180,8 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
 
     local node_row, node_col = node:range()
 
-    for _, assignment in ipairs(assignments_in_scope(scope)) do
+    local assignment_types = {"assignment_statement", "short_var_declaration"}
+    for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
             local left = assignment:field("left")[1]
