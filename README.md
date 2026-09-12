@@ -12,6 +12,7 @@ Tree-sitter based taint analysis in Neovim.
 * [x] Identify sinks
 * [ ] Identify returns
 * [ ] Identify out-of-scope definitions
+* [ ] Identify assignments in ranges
 * [ ] Configurable highlights and keybindings
 
 ## Language Support
