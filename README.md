@@ -23,3 +23,5 @@ Tree-sitter based taint analysis in Neovim.
 ## Usage
 
 On a symbol, hit <kbd>T</kbd> to find where the symbol is defined and assigned to as well as the scope it is defined in.
+
+Clear the highlights with `:TaintClear`.
