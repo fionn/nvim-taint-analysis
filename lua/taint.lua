@@ -200,10 +200,12 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                         for right_child in assignment:field("right")[1]:iter_children() do
                             for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
                                 if not node:equal(identifier) then
-                                    extmark(identifier, taint.input, vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
+                                    extmark(identifier, taint.input,
+                                            vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
                                     local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
                                     if child_scope ~= nil then
-                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, visited)
+                                        assignees_and_inputs(identifier, child_scope, assert(child_definition),
+                                                             definitions_in_scope_id, visited)
                                     end
                                 end
                             end
@@ -248,7 +250,8 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                                         vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
                                 local child_scope, child_definition = defining_scope(left_child, definitions_in_scope_id)
                                 if child_scope ~= nil then
-                                    assignments_and_outputs(left_child, child_scope, assert(child_definition), definitions_in_scope_id, visited)
+                                    assignments_and_outputs(left_child, child_scope, assert(child_definition),
+                                                            definitions_in_scope_id, visited)
                                 end
                             end
                         end
