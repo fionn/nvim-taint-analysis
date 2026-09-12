@@ -2,11 +2,12 @@ local M = {}
 
 local ns = vim.api.nvim_create_namespace("taint")
 
-vim.api.nvim_set_hl(ns, "@taint.assignment", {bg = "#707000", default = true})
+vim.api.nvim_set_hl(ns, "@taint.assignment", {bg = "#204090", default = true})
 vim.api.nvim_set_hl(ns, "@taint.scope", {bg = "#102030", default = true})
-vim.api.nvim_set_hl(ns, "@taint.input", {bg = "#204090", default = true})
+vim.api.nvim_set_hl(ns, "@taint.input", {bg = "#0050f0", default = true})
+vim.api.nvim_set_hl(ns, "@taint.output", {bg = "#700070", default = true})
 vim.api.nvim_set_hl(ns, "@taint.definition", {bg = "#905000", default = true})
-vim.api.nvim_set_hl(ns, "@taint.symbol", {bg = "#0050f0", default = true})
+vim.api.nvim_set_hl(ns, "@taint.symbol", {bg = "#448899", default = true})
 vim.api.nvim_set_hl(ns, "@taint.virt_text", {fg = "#306090", default = true})
 
 -- Helper to extmark a node.
@@ -205,6 +206,50 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
     end
 end
 
+---@param node TSNode
+---@param scope TSNode
+---@param definition TSNode
+---@param definitions_in_scope_id { [string]: TSNode[] }
+---@param visited string[]?
+local function assignments_and_outputs(node, scope, definition, definitions_in_scope_id, visited)
+    visited = visited or {}
+
+    if vim.list_contains(visited, definition:id()) then
+        return
+    end
+    table.insert(visited, definition:id())
+
+    local node_row, node_col = node:range()
+
+    local assignment_types = {"assignment_statement", "short_var_declaration"}
+    for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
+        local assignment_row, assignment_col = assignment:range()
+        if assignment_row > node_row or (assignment_row == node_row and assignment_col > node_col) then
+            for right_child in assignment:field("right")[1]:iter_children() do
+                for _, identifier in ipairs(decendants_of_types(right_child, {"identifier", "field_identifier"})) do
+                    local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
+                    if identifier_definition and identifier_definition:id() == definition:id() then
+                        extmark(identifier, "@taint.output")
+                        local left = assignment:field("left")[1]
+                        for i = 0, left:named_child_count() - 1 do
+                            local left_child = assert(left:named_child(i))
+                            if left_child:type() == "identifier" then
+                                extmark(left_child, "@taint.output",
+                                        vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
+                                local child_scope, child_definition = defining_scope(left_child, definitions_in_scope_id)
+                                if child_scope ~= nil then
+                                    assignments_and_outputs(left_child, child_scope, assert(child_definition), definitions_in_scope_id, visited)
+                                end
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+        end
+    end
+end
+
 M.clear = function()
     vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
 end
@@ -237,6 +282,7 @@ M.main = function()
     assert(definition)
 
     assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
+    assignments_and_outputs(node, scope, definition, definitions_in_scope_id)
 
     extmark(scope, "@taint.scope")
     extmark(definition, "@taint.definition", "Definition of " .. vim.treesitter.get_node_text(definition, 0))

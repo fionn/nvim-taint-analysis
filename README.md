@@ -9,7 +9,7 @@ Tree-sitter based taint analysis in Neovim.
 
 * [x] Identify definitions and assignments
 * [x] Identify sources recursively
-* [ ] Identify sinks
+* [x] Identify sinks
 * [ ] Configurable highlights and keybindings.
 
 ## Language Support
