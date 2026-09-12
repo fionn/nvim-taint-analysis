@@ -165,16 +165,11 @@ end
 ---@param definition TSNode
 ---@param definitions_in_scope_id { [string]: TSNode[] }
 ---@param visited string[]?
----@param assignees TSNode[]?
----@param inputs TSNode[]?
----@return TSNode[] assignees, TSNode[] inputs
-local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id, visited, assignees, inputs)
+local function assignees_and_inputs(node, scope, definition, definitions_in_scope_id, visited)
     visited = visited or {}
-    assignees = assignees or {}
-    inputs = inputs or {}
 
     if vim.list_contains(visited, definition:id()) then
-        return assignees, inputs
+        return
     end
     table.insert(visited, definition:id())
 
@@ -190,14 +185,14 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                 if left_child:type() == "identifier" then
                     local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                     if left_child_definition and left_child_definition:id() == definition:id() then
-                        table.insert(assignees, left_child)
+                        extmark(left_child, "@taint.assignment")
                         for right_child in assignment:field("right")[1]:iter_children() do
                             for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
                                 if not node:equal(identifier) then
-                                    table.insert(inputs, identifier)
+                                    extmark(identifier, "@taint.input", vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
                                     local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
                                     if child_scope ~= nil then
-                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, visited, assignees, inputs)
+                                        assignees_and_inputs(identifier, child_scope, assert(child_definition), definitions_in_scope_id, visited)
                                     end
                                 end
                             end
@@ -208,7 +203,6 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
             end
         end
     end
-    return assignees, inputs
 end
 
 M.clear = function()
@@ -242,18 +236,10 @@ M.main = function()
     if scope == nil then return end
     assert(definition)
 
-    local assignees, inputs = assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
-
-    for _, assignee in ipairs(assignees) do
-        extmark(assignee, "@taint.assignment", "Assignment")
-    end
-
-    for _, input in ipairs(inputs) do
-        extmark(input, "@taint.input")
-    end
+    assignees_and_inputs(node, scope, definition, definitions_in_scope_id)
 
     extmark(scope, "@taint.scope")
-    extmark(definition, "@taint.definition", "Definition")
+    extmark(definition, "@taint.definition", "Definition of " .. vim.treesitter.get_node_text(definition, 0))
     extmark(node, "@taint.symbol", "Symbol")
 end
 
