@@ -46,21 +46,21 @@ end
 
 ---@param node TSNode
 ---@param types string[]
----@param decendants TSNode[]?
+---@param descendants TSNode[]?
 ---@return TSNode[]
-local function decendants_of_types(node, types, decendants)
+local function descendants_of_types(node, types, descendants)
     ---@type TSNode[]
-    decendants = decendants or {}
+    descendants = descendants or {}
 
     for child in node:iter_children() do
         if vim.list_contains(types, child:type()) then
-            table.insert(decendants, child)
+            table.insert(descendants, child)
         else
-            decendants_of_types(child, types, decendants)
+            descendants_of_types(child, types, descendants)
         end
     end
 
-    return decendants
+    return descendants
 end
 
 -- Query for references, scopes and definitions.
@@ -197,7 +197,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                     if left_child_definition and left_child_definition:id() == definition:id() then
                         extmark(left_child, taint.assignment)
                         for right_child in assignment:field("right")[1]:iter_children() do
-                            for _, identifier in ipairs(decendants_of_types(right_child, {"identifier"})) do
+                            for _, identifier in ipairs(descendants_of_types(right_child, {"identifier"})) do
                                 if not node:equal(identifier) then
                                     extmark(identifier, taint.input,
                                             vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
@@ -237,7 +237,7 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
         local assignment_row, assignment_col = assignment:range()
         if assignment_row > node_row or (assignment_row == node_row and assignment_col > node_col) then
             for right_child in assignment:field("right")[1]:iter_children() do
-                for _, identifier in ipairs(decendants_of_types(right_child, {"identifier", "field_identifier"})) do
+                for _, identifier in ipairs(descendants_of_types(right_child, {"identifier", "field_identifier"})) do
                     local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
                     if identifier_definition and identifier_definition:id() == definition:id() then
                         extmark(identifier, taint.output)
