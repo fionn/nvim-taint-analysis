@@ -190,8 +190,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
-            local left = assignment:field("left")[1]
-            for _, left_child in ipairs(left:named_children()) do
+            for _, left_child in ipairs(assignment:field("left")[1]:named_children()) do
                 if left_child:type() == "identifier" then
                     local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                     if left_child_definition and left_child_definition:id() == definition:id() then
@@ -241,8 +240,7 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                     local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
                     if identifier_definition and identifier_definition:id() == definition:id() then
                         extmark(identifier, taint.output)
-                        local left = assignment:field("left")[1]
-                        for _, left_child in ipairs(left:named_children()) do
+                        for _, left_child in ipairs(assignment:field("left")[1]:named_children()) do
                             if left_child:type() == "identifier" then
                                 extmark(left_child, taint.output,
                                         vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
