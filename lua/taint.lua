@@ -52,7 +52,7 @@ local function descendants_of_types(node, types, descendants)
     ---@type TSNode[]
     descendants = descendants or {}
 
-    for child in node:iter_children() do
+    for child, _ in node:iter_children() do
         if vim.list_contains(types, child:type()) then
             table.insert(descendants, child)
         else
