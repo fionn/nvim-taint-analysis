@@ -251,7 +251,6 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                                 end
                             end
                         end
-                        break
                     end
                 end
             end
