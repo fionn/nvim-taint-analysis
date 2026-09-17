@@ -78,7 +78,6 @@ end
 ---@param descendants TSNode[]?
 ---@return TSNode[]
 local function descendants_of_types(node, types, descendants)
-    ---@type TSNode[]
     descendants = descendants or {}
 
     for child, _ in node:iter_children() do
