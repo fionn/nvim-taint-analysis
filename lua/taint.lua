@@ -1,6 +1,6 @@
 local M = {}
 
-local ns = vim.api.nvim_create_namespace("taint")
+M.ns = vim.api.nvim_create_namespace("taint")
 
 local taint = {
     assignment = "@taint.assignment",
@@ -12,13 +12,13 @@ local taint = {
     virt_text = "@taint.virt_text"
 }
 
-vim.api.nvim_set_hl(ns, taint.assignment, {bg = "#204090", default = true})
-vim.api.nvim_set_hl(ns, taint.scope, {bg = "#102030", default = true})
-vim.api.nvim_set_hl(ns, taint.input, {bg = "#0050f0", default = true})
-vim.api.nvim_set_hl(ns, taint.output, {bg = "#700070", default = true})
-vim.api.nvim_set_hl(ns, taint.definition, {bg = "#905000", default = true})
-vim.api.nvim_set_hl(ns, taint.symbol, {bg = "#448899", default = true})
-vim.api.nvim_set_hl(ns, taint.virt_text, {fg = "#306090", default = true})
+vim.api.nvim_set_hl(M.ns, taint.assignment, {bg = "#204090", default = true})
+vim.api.nvim_set_hl(M.ns, taint.scope, {bg = "#102030", default = true})
+vim.api.nvim_set_hl(M.ns, taint.input, {bg = "#0050f0", default = true})
+vim.api.nvim_set_hl(M.ns, taint.output, {bg = "#700070", default = true})
+vim.api.nvim_set_hl(M.ns, taint.definition, {bg = "#905000", default = true})
+vim.api.nvim_set_hl(M.ns, taint.symbol, {bg = "#448899", default = true})
+vim.api.nvim_set_hl(M.ns, taint.virt_text, {fg = "#306090", default = true})
 
 -- Given a list-like table of elements of type V and a predicate function that
 -- takes V and returns a bool, this filters the table down to the elements that
@@ -70,7 +70,7 @@ local function extmark(node, type, virtual_text)
         virt_text = virt_text
     }
 
-    return vim.api.nvim_buf_set_extmark(0, ns, start_row, start_col, extmark_opts)
+    return vim.api.nvim_buf_set_extmark(0, M.ns, start_row, start_col, extmark_opts)
 end
 
 ---@param node TSNode
@@ -282,12 +282,12 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
 end
 
 M.clear = function()
-    vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
+    vim.api.nvim_buf_clear_namespace(0, M.ns, 0, -1)
 end
 
 M.main = function()
     M.clear()
-    vim.api.nvim_win_set_hl_ns(0, ns)
+    vim.api.nvim_win_set_hl_ns(0, M.ns)
 
     local parser = assert(vim.treesitter.get_parser())
     -- We parse the whole tree first, just in case. See
