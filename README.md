@@ -9,10 +9,10 @@ Tree-sitter based taint analysis in Neovim.
 
 * [x] Identify definitions and assignments
 * [x] Identify sources recursively
-* [x] Identify sinks
-* [ ] Identify returns
-* [ ] Identify out-of-scope definitions
+* [x] Identify sinks recursively
+* [ ] Identify non-assignments (e.g. returns and conditionals)
 * [ ] Identify assignments in ranges
+* [ ] Identify out-of-scope definitions
 * [ ] Identify tainted arguments of functions that aren't assigned
 * [ ] Identify values of functions with directly tainted arguments
 * [ ] Configurable highlights and keybindings
