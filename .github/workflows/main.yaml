@@ -1,0 +1,36 @@
+name: CI
+
+on: [push]
+
+permissions:
+  contents: read
+
+jobs:
+
+  test:
+
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Neovim
+        uses: $/.github/actions/setup-nvim
+        with:
+          version: v0.12.5
+
+      - name: Install Tree-sitter
+        uses: tree-sitter/setup-action@v2
+        with:
+          install-lib: false
+
+      - name: Install parser
+        run: nvim -u NONE -l test/setup.lua
+
+      - name: Test
+        run: nvim -u NONE -l test/test.lua

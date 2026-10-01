@@ -1,0 +1,46 @@
+name: Setup Neovim
+description: Download and install Neovim
+
+inputs:
+  version:
+    description: Neovim version or release tag
+    required: true
+
+runs:
+
+  using: composite
+  steps:
+
+    - name: Download Neovim
+      run: gh release download "$version" --repo neovim/neovim --pattern nvim-linux-x86_64.tar.gz
+      shell: bash
+      env:
+        version: ${{ inputs.version }}
+
+    - name: Get release digest
+      id: release
+      run: |
+        digest=$(gh release view "$version" --repo neovim/neovim --json assets --jq ".[].[] | select(.name == \"nvim-linux-x86_64.tar.gz\") | .digest")
+        echo "digest=$digest" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        version: ${{ inputs.version }}
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Calculate local hash
+      id: hash
+      uses: fionn/action-hash@v0.0.2
+      with:
+        path: nvim-linux-x86_64.tar.gz
+
+    - name: Compare hashes
+      run: |
+        [[ "$release_digest" == "sha256:$local_hash" ]]
+      shell: bash
+      env:
+        release_digest: ${{ steps.release.outputs.digest }}
+        local_hash: ${{ steps.hash.outputs.sha256 }}
+
+    - name: Install Neovim
+      run: sudo tar --strip-components=1 -C /usr -xzf nvim-linux-x86_64.tar.gz
+      shell: bash
