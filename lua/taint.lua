@@ -218,10 +218,10 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
-            for left_child in filter(node_is_type("identifier"), assignment:field("left")[1]:named_children()) do
+            for left_child in filter(node_is_type("identifier"), assert(assignment:field("left")[1]):named_children()) do
                 local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                 if left_child_definition and left_child_definition:id() == definition:id() then
-                    for right_child in assignment:field("right")[1]:iter_children() do
+                    for right_child in assert(assignment:field("right")[1]):iter_children() do
                         for identifier in filter(function(x) return not node:equal(x) end, ---@diagnostic disable-line:no-unknown
                                             descendants_of_types(right_child, {"identifier"})) do
                             extmark(identifier, taint.input,
@@ -259,13 +259,13 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row > node_row or (assignment_row == node_row and assignment_col > node_col) then
-            for right_child in assignment:field("right")[1]:iter_children() do
+            for right_child in assert(assignment:field("right")[1]):iter_children() do
                 for _, identifier in ipairs(descendants_of_types(right_child, {"identifier", "field_identifier"})) do
                     local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
                     if identifier_definition and identifier_definition:id() == definition:id() then
                         extmark(identifier, taint.output)
                         for left_child in filter(node_is_type("identifier"),
-                                                 assignment:field("left")[1]:named_children()) do
+                                                 assert(assignment:field("left")[1]):named_children()) do
                             extmark(left_child, taint.output,
                                     vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
                             local child_scope, child_definition = defining_scope(left_child, definitions_in_scope_id)
