@@ -223,13 +223,13 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
                 if left_child_definition and left_child_definition:id() == definition:id() then
                     for right_child in assert(assignment:field("right")[1]):iter_children() do
                         for identifier in filter(function(x) return not node:equal(x) end, ---@diagnostic disable-line:no-unknown
-                                            descendants_of_types(right_child, {"identifier"})) do
+                                                 descendants_of_types(right_child, {"identifier"})) do
                             extmark(identifier, taint.input,
                                     vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
                             local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
                             if child_scope ~= nil then
                                 assignees_and_inputs(identifier, child_scope, assert(child_definition),
-                                                        definitions_in_scope_id, visited)
+                                                     definitions_in_scope_id, visited)
                             end
                         end
                     end
