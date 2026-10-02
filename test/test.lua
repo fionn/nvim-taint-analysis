@@ -57,13 +57,13 @@ test("symbol_and_scope", function()
     -- Sanity-check that the symbol location matches the cursor.
     assert(symbol[2] == cursor.index[1] - 1)
     assert(symbol[3] == cursor.index[2] - 1)
-    assert(symbol[4].end_row == cursor.index[1] - 1)
-    assert(symbol[4].end_col == cursor.index[2])
+    assert(assert(symbol[4]).end_row == cursor.index[1] - 1)
+    assert(assert(symbol[4]).end_col == cursor.index[2])
 
     assert(scope[2] == 2)
     assert(scope[3] == 15)
-    assert(scope[4].end_row == 6)
-    assert(scope[4].end_col == 1)
+    assert(assert(scope[4]).end_row == 6)
+    assert(assert(scope[4]).end_col == 1)
 
     vim.api.nvim_buf_delete(buf, {})
 end)
