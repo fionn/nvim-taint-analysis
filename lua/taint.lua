@@ -163,7 +163,7 @@ local function defining_scope(node, scope_definitions_map)
         -- we'll iterate over the definitions it contains. If not, we'll select
         -- its parent as a candidate scope and try again.
         local definitions = scope_definitions_map[scope:id()]
-        if definitions then
+        if definitions ~= nil then
             for _, definition in ipairs(definitions) do
                 if vim.treesitter.get_node_text(definition, 0) == text then
                     return scope, definition
