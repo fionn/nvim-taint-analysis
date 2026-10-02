@@ -7,6 +7,35 @@ permissions:
 
 jobs:
 
+  lint:
+
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Neovim
+        uses: $/.github/actions/setup-nvim
+        with:
+          version: v0.12.5
+
+      - name: Install LuaLS
+        run: |
+          gh release download 3.19.1 --repo LuaLS/lua-language-server --pattern "lua-language-server-*-linux-x64.tar.gz"
+          sudo mkdir /opt/lua-language-server
+          sudo tar -C /opt/lua-language-server -xzf lua-language-server-*-linux-x64.tar.gz
+          sudo ln -s /opt/lua-language-server/bin/lua-language-server /usr/bin/lua-language-server
+
+      - name: Lint with LuaLS
+        run: lua-language-server --check .
+        env:
+          VIMRUNTIME: /usr/share/nvim/runtime
+
   test:
 
     name: Test
