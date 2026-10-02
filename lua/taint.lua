@@ -111,7 +111,7 @@ local function build_captures(root, parser)
     -- https://github.com/nvim-treesitter/nvim-treesitter/blob/main/CONTRIBUTING.md#locals,
     -- https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#local-variables.
     for id, node in query:iter_captures(root, 0) do
-        local capture = query.captures[id]
+        local capture = assert(query.captures[id])
         if capture == "local.scope" then
             -- This node introduces a new local scope.
             table.insert(captured.scopes, node)
