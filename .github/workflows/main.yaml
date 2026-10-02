@@ -31,8 +31,18 @@ jobs:
           sudo tar -C /opt/lua-language-server -xzf lua-language-server-*-linux-x64.tar.gz
           sudo ln -s /opt/lua-language-server/bin/lua-language-server /usr/bin/lua-language-server
 
+      - name: Install EmmyLua
+        run: |
+          gh release download 0.25.1 --repo EmmyLuaLs/emmylua-analyzer-rust --pattern emmylua_check-linux-x64.tar.gz
+          sudo tar -C /usr/bin -xzf emmylua_check-linux-x64.tar.gz
+
       - name: Lint with LuaLS
         run: lua-language-server --check .
+        env:
+          VIMRUNTIME: /usr/share/nvim/runtime
+
+      - name: Lint with EmmyLua
+        run: emmylua_check --config .luarc.json --output-format github --warnings-as-errors --ignore test/setup.lua .
         env:
           VIMRUNTIME: /usr/share/nvim/runtime
 
