@@ -43,8 +43,8 @@ test("symbol_and_scope", function()
     local scopes = {}
     local symbols = {}
     for _, extmark in ipairs(extmarks) do
-        if extmark[4].hl_group == "@taint.symbol" then table.insert(symbols, extmark) end
-        if extmark[4].hl_group == "@taint.scope" then table.insert(scopes, extmark) end
+        if assert(extmark[4]).hl_group == "@taint.symbol" then table.insert(symbols, extmark) end
+        if assert(extmark[4]).hl_group == "@taint.scope" then table.insert(scopes, extmark) end
     end
 
     assert(#symbols == 1)
