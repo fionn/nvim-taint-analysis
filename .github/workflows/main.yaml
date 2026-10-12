@@ -22,7 +22,7 @@ jobs:
       - name: Install Neovim
         uses: $/.github/actions/setup-nvim
         with:
-          version: v0.12.5
+          version: v0.12.6
 
       - name: Install LuaLS
         run: |
@@ -61,7 +61,7 @@ jobs:
       - name: Install Neovim
         uses: $/.github/actions/setup-nvim
         with:
-          version: v0.12.5
+          version: v0.12.6
 
       - name: Install Tree-sitter
         uses: tree-sitter/setup-action@v2
