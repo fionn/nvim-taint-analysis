@@ -20,7 +20,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Neovim
-        uses: $/.github/actions/setup-nvim
+        uses: fionn/setup-nvim@v0.0.2
         with:
           version: v0.12.6
 
@@ -59,7 +59,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Neovim
-        uses: $/.github/actions/setup-nvim
+        uses: fionn/setup-nvim@v0.0.2
         with:
           version: v0.12.6
 
