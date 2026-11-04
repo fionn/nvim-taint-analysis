@@ -30,11 +30,15 @@ jobs:
           sudo mkdir /opt/lua-language-server
           sudo tar -C /opt/lua-language-server -xzf lua-language-server-*-linux-x64.tar.gz
           sudo ln -s /opt/lua-language-server/bin/lua-language-server /usr/bin/lua-language-server
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install EmmyLua
         run: |
           gh release download 0.25.1 --repo EmmyLuaLs/emmylua-analyzer-rust --pattern emmylua_check-linux-x64.tar.gz
           sudo tar -C /usr/bin -xzf emmylua_check-linux-x64.tar.gz
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Lint with LuaLS
         run: lua-language-server --check .
