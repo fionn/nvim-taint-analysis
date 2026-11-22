@@ -2,7 +2,7 @@ vim.opt.rtp:prepend(".")
 vim.cmd.filetype("on")
 local taint = require("taint")
 
-local exit_code = 0
+local failures_count = 0
 
 ---@param name string
 ---@param fn fun()
@@ -12,7 +12,7 @@ local function test(name, fn)
         print(name .. ": ok")
     else
         print(name .. ": failed with " .. err)
-        exit_code = math.min(exit_code + 1, 255)
+        failures_count = failures_count + 1
     end
 end
 
@@ -68,4 +68,4 @@ test("symbol_and_scope", function()
     vim.api.nvim_buf_delete(buf, {})
 end)
 
-os.exit(exit_code)
+os.exit(math.min(failures_count, 255))
