@@ -80,11 +80,11 @@ end
 
 -- Query for references, scopes and definitions.
 ---@param root TSNode
----@param parser vim.treesitter.LanguageTree
+---@param language string
 ---@return Captures
 ---@nodiscard
-local function build_captures(root, parser)
-    local query = assert(vim.treesitter.query.get(parser:lang(), "locals"))
+local function build_captures(root, language)
+    local query = assert(vim.treesitter.query.get(language, "locals"))
 
     ---@class (exact) Captures
     ---@field scopes TSNode[]
@@ -294,7 +294,7 @@ M.main = function()
 
     local node = assert(vim.treesitter.get_node())
     local root = node:tree():root()
-    local captures = build_captures(root, parser)
+    local captures = build_captures(root, parser:lang())
 
     -- A map from a scope ID to definitions it contains.
     ---@type { [string]: TSNode[] }
