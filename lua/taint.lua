@@ -30,6 +30,12 @@ local function node_is_type(type)
     end
 end
 
+---@param node TSNode
+---@return boolean
+local function node_is_identifier(node)
+    return node_is_type("identifier")(node)
+end
+
 -- Helper to extmark a node.
 ---@param node TSNode
 ---@param type string
@@ -202,7 +208,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
             for left_child in (
                 vim.iter(
                     assert(assignment:field("left")[1]):named_children()
-                ):filter(node_is_type("identifier")) --[[@as fun(): TSNode]]
+                ):filter(node_is_identifier) --[[@as fun(): TSNode]]
             ) do
                 local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                 if left_child_definition and left_child_definition:id() == definition:id() then
@@ -255,7 +261,7 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                         for left_child in (
                             vim.iter(
                                 assert(assignment:field("left")[1]):named_children()
-                            ):filter(node_is_type("identifier")) --[[@as fun(): TSNode]]
+                            ):filter(node_is_identifier) --[[@as fun(): TSNode]]
                         ) do
                             extmark(left_child, taint.output,
                                     vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
