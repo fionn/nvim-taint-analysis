@@ -12,6 +12,9 @@ local taint = {
     virt_text = "@taint.virt_text"
 }
 
+local assignment_types = {"assignment_statement", "short_var_declaration"}
+local identifier_types = {"identifier", "field_identifier"}
+
 vim.api.nvim_set_hl(M.ns, taint.assignment, {bg = "#204090", default = true})
 vim.api.nvim_set_hl(M.ns, taint.scope, {bg = "#102030", default = true})
 vim.api.nvim_set_hl(M.ns, taint.input, {bg = "#0050f0", default = true})
@@ -201,7 +204,6 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
 
     local node_row, node_col = node:range()
 
-    local assignment_types = {"assignment_statement", "short_var_declaration"}
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
@@ -250,12 +252,11 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
 
     local node_row, node_col = node:range()
 
-    local assignment_types = {"assignment_statement", "short_var_declaration"}
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row > node_row or (assignment_row == node_row and assignment_col > node_col) then
             for right_child in assert(assignment:field("right")[1]):iter_children() do
-                for _, identifier in ipairs(descendants_of_types(right_child, {"identifier", "field_identifier"})) do
+                for _, identifier in ipairs(descendants_of_types(right_child, identifier_types)) do
                     local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
                     if identifier_definition and identifier_definition:id() == definition:id() then
                         extmark(identifier, taint.output)
