@@ -20,25 +20,6 @@ vim.api.nvim_set_hl(M.ns, taint.definition, {bg = "#905000", default = true})
 vim.api.nvim_set_hl(M.ns, taint.symbol, {bg = "#448899", default = true})
 vim.api.nvim_set_hl(M.ns, taint.virt_text, {fg = "#306090", default = true})
 
--- Given a list-like table of elements of type V and a predicate function that
--- takes V and returns a bool, this filters the table down to the elements that
--- the predicate returns true on.
----@generic V
----@param predicate fun(x: V): boolean
----@param array V[]
----@return fun(): V
-local function filter(predicate, array)
-    local i = 0
-    return function()
-        while true do
-            i = i + 1
-            local x = array[i]
-            if x == nil then return nil end
-            if predicate(x) then return x end
-        end
-    end
-end
-
 -- Given a node type, this produces a predicate function that returns true if
 -- a given node is that type.
 ---@param type string
@@ -218,12 +199,19 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
     for _, assignment in ipairs(node_types_in_scope(scope, assignment_types)) do
         local assignment_row, assignment_col = assignment:range()
         if assignment_row <= node_row and not (assignment_row == node_row and assignment_col > node_col) then
-            for left_child in filter(node_is_type("identifier"), assert(assignment:field("left")[1]):named_children()) do
+            for left_child in (
+                vim.iter(
+                    assert(assignment:field("left")[1]):named_children()
+                ):filter(node_is_type("identifier")) --[[@as fun(): TSNode]]
+            ) do
                 local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                 if left_child_definition and left_child_definition:id() == definition:id() then
                     for right_child in assert(assignment:field("right")[1]):iter_children() do
-                        for identifier in filter(function(x) return not node:equal(x) end, ---@diagnostic disable-line:no-unknown
-                                                 descendants_of_types(right_child, {"identifier"})) do
+                        for identifier in (
+                            vim.iter(
+                                descendants_of_types(right_child, {"identifier"})
+                            ):filter(function(x) return not node:equal(x) end) --[[@as fun(): TSNode]]
+                        ) do
                             extmark(identifier, taint.input,
                                     vim.treesitter.get_node_text(node, 0) .. "<-" ..  vim.treesitter.get_node_text(identifier, 0))
                             local child_scope, child_definition = defining_scope(identifier, definitions_in_scope_id)
@@ -264,8 +252,11 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                     local _, identifier_definition = defining_scope(identifier, definitions_in_scope_id)
                     if identifier_definition and identifier_definition:id() == definition:id() then
                         extmark(identifier, taint.output)
-                        for left_child in filter(node_is_type("identifier"),
-                                                 assert(assignment:field("left")[1]):named_children()) do
+                        for left_child in (
+                            vim.iter(
+                                assert(assignment:field("left")[1]):named_children()
+                            ):filter(node_is_type("identifier")) --[[@as fun(): TSNode]]
+                        ) do
                             extmark(left_child, taint.output,
                                     vim.treesitter.get_node_text(node, 0) .. "->" .. vim.treesitter.get_node_text(left_child, 0))
                             local child_scope, child_definition = defining_scope(left_child, definitions_in_scope_id)
