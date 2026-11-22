@@ -212,6 +212,7 @@ local function assignees_and_inputs(node, scope, definition, definitions_in_scop
             ) do
                 local _, left_child_definition = defining_scope(left_child, definitions_in_scope_id)
                 if left_child_definition and left_child_definition:id() == definition:id() then
+                    extmark(left_child, taint.assignment)
                     for right_child in assert(assignment:field("right")[1]):iter_children() do
                         for identifier in (
                             vim.iter(
