@@ -24,8 +24,8 @@ vim.api.nvim_set_hl(M.ns, taint.virt_text, {fg = "#306090", default = true})
 -- takes V and returns a bool, this filters the table down to the elements that
 -- the predicate returns true on.
 ---@generic V
----@param array V[]
 ---@param predicate fun(x: V): boolean
+---@param array V[]
 ---@return fun(): V
 local function filter(predicate, array)
     local i = 0
