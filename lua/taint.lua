@@ -273,6 +273,7 @@ local function assignments_and_outputs(node, scope, definition, definitions_in_s
                                                         definitions_in_scope_id, visited)
                             end
                         end
+                        break
                     end
                 end
             end
